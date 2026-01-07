@@ -1,0 +1,308 @@
+﻿<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f5f6fa;
+        color: #333;
+    }
+
+    .settings-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 40px 30px;
+        max-width: 480px;
+        margin: 20px auto;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        font-size: 14px;
+    }
+
+        .settings-card h1 {
+            font-size: 24px;
+            color: #0d47ff;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+    .setting-option {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    /* Buttons - transparent background, black text */
+    .btn {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        background-color: transparent !important;
+        color: black !important;
+        border: 2px solid #ddd;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+
+    .btn-danger:hover {
+        color: red !important;
+        border: none;
+    }
+
+    /* Icons on the right */
+    .btn i,
+    .btn svg {
+        font-size: 20px;
+    }
+
+    .custom-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        appearance: none;
+        border: 2px solid #0d47ff;
+        border-radius: 4px;
+        background-color: white;
+        transition: background 0.2s ease;
+    }
+
+        .custom-checkbox:checked {
+            background-color: #0d47ff;
+            border-color: #0d47ff;
+        }
+
+            .custom-checkbox:checked::after {
+                content: "";
+                display: block;
+                position: relative;
+                top: 2px;
+                left: 6px;
+                width: 4px;
+                height: 8px;
+                border: solid white;
+                border-width: 0 2px 2px 0;
+                transform: rotate(45deg);
+            }
+
+    .modal {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0,0,0,0.5);
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+    }
+
+    .modal-content {
+        background: #f9f9f9;
+        padding: 25px 20px;
+        border-radius: 8px;
+        width: 360px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        font-family: inherit;
+    }
+
+        .modal-content h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-content .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .modal-content input[type="password"] {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+            .modal-content input[type="password"]:focus {
+                outline: none;
+                border-color: #4a90e2;
+            }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+        .modal-actions .btn {
+            padding: 8px 14px;
+            font-size: 0.95rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-actions .btn-primary {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+        }
+
+            .modal-actions .btn-primary:hover {
+                background-color: #357ABD;
+            }
+
+        .modal-actions .btn-secondary {
+            background-color: #eee;
+            color: #333;
+            border: none;
+        }
+
+            .modal-actions .btn-secondary:hover {
+                background-color: #ddd;
+            }
+</style>
+
+<style>
+    .custom-alert {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0,0,0,0.5);
+        z-index: 10000;
+    }
+
+    .custom-alert-content {
+        background: #fff;
+        padding: 20px 25px;
+        border-radius: 8px;
+        width: 320px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+        .custom-alert-content h4 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .custom-alert-content p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        .custom-alert-content .btn {
+            align-self: center;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+</style>
+
+
+<!-- Alert -->
+<div id="customAlert" class="custom-alert" style="display:none;">
+    <div class="custom-alert-content">
+        <h4 id="customAlertTitle">Alert!</h4>
+        <p id="customAlertMessage"></p>
+        <button class="btn btn-primary" onclick="closeCustomAlert()">OK</button>
+    </div>
+</div>
+
+
+<div class="settings-card">
+    <h1>Paramètres</h1>
+
+    <!-- Changer le mdp -->
+    <div class="setting-option">
+        <button type="button" class="btn" onclick="openPasswordModal()">
+            <span>Changer le mot de passe</span>
+            <i class="fas fa-key"></i>
+        </button>
+    </div>
+
+    <!-- PopUp ^^-->
+    <div id="passwordModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3 style="text-align:center">Changement du mot de passe❗</h3>
+            <form id="passwordForm">
+                <div class="form-group">
+                    <label>Ancien mot de passe</label>
+                    <input type="password" id="oldPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>Nouveau mot de passe</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirmer le nouveau mot de passe</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Confirmer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Suppression compte -->
+    <div class="setting-option">
+        <form asp-action="DeleteAccount" asp-controller="Parametres" id="deleteAccountForm" method="post" style="width: 100%;">
+            <button type="submit" class="btn btn-danger">
+                <span>Supprimer mon compte</span>
+                <i class="fas fa-trash"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- Déconnexion -->
+    <div class="setting-option">
+        <form asp-action="Logout" asp-controller="Account" method="post" style="width: 100%;">
+            <button type="submit" class="btn">
+                <span>Déconnexion</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="logout-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path d="M14 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h9v-2H5V5h9V3zm7.65 9.65-3.79-3.79L17.5 10.5 19.99 13H10v2h9.99l-2.49 2.14 1.36 1.36 3.79-3.79a.5.5 0 0 0 0-.71z" />
+                </svg>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="~/js/site.js"></script>
+<script>
+        document.getElementById("deleteAccountForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        Swal.fire({
+            title: 'Êtes-vous sûr ?',
+            text: "Votre compte sera supprimé dans 30 jours !",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#388566',
+            confirmButtonText: 'Oui, supprimer mon compte',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                e.target.submit();
+            }
+        });
+    });
+</script>

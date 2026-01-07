@@ -1,0 +1,881 @@
+﻿@using System.Globalization
+@model ConversationVM?
+
+<style>
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 85%;
+        min-height: 85vh;
+        background: #fafafa;
+    }
+
+    /* Scrollable message area */
+    .chat-body {
+        flex-grow: 1;
+        padding: 15px;
+        overflow-y: auto;
+        background: #fafafa;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Messages */
+    .message {
+        margin: 8px 0;
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 14px;
+        width: fit-content;
+        max-width: 100%;
+        position: relative;
+    }
+
+        .message.sent {
+            background: #dcf8c6;
+            align-self: flex-end;
+        }
+
+        .message.received {
+            background: #e5e5ea;
+            align-self: flex-start;
+        }
+
+        .message .timestamp {
+            display: block;
+            font-size: 10px;
+            color: #555;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .message .sender-name {
+            display: block;
+            font-size: 10px;
+            color: #555;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+    /* Footer (input + buttons) */
+    .chat-footer {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-top: 1px solid #ddd;
+        background: #fff;
+    }
+
+        .chat-footer input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-footer button {
+            background: none;
+            border: none;
+            margin-left: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            color: #555;
+        }
+
+            .chat-footer button:hover {
+                color: #000;
+            }
+
+    .message-date-divider {
+        text-align: center;
+        color: #777;
+        font-size: 12px;
+        margin: 15px 0;
+        position: relative;
+    }
+
+        .message-date-divider::before,
+        .message-date-divider::after {
+            content: '';
+            display: inline-block;
+            width: 30%;
+            height: 1px;
+            background: #ccc;
+            vertical-align: middle;
+            margin: 0 10px;
+        }
+
+    .message .reactions {
+        display: none;
+        position: absolute;
+        top: -25px;
+        right: 0;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        padding: 2px 6px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        cursor: pointer;
+        font-size: 16px;
+        gap: 5px;
+    }
+
+    .message:hover .reactions {
+        display: flex;
+    }
+
+    .reaction-display {
+        margin-top: 5px;
+        font-size: 16px;
+    }
+
+
+    /* Pour positionner les panneaux par rapport au chat */
+    .chat-container {
+        position: relative;
+    }
+
+    /* Cube d'appel */
+    .call-panel {
+        position: absolute;
+        right: 1.5rem;
+        bottom: 5rem; /* au-dessus de la barre d'entrée texte */
+        width: 260px;
+        background: #1f2430;
+        color: #f9fafb;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        z-index: 50;
+    }
+
+    .call-panel-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .call-panel-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(76, 175, 80, 0.15);
+    }
+
+        .call-panel-icon i {
+            font-size: 18px;
+        }
+
+    .call-panel-texts {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .call-panel-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .call-panel-subtitle {
+        font-size: 0.8rem;
+        opacity: 0.8;
+    }
+
+    /* Boutons */
+    .call-panel-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .btn-call {
+        border: none;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        transition: transform 0.08s ease, box-shadow 0.08s ease, opacity 0.08s ease;
+    }
+
+        .btn-call i {
+            font-size: 0.8rem;
+        }
+
+        /* Refuser */
+        .btn-call.decline {
+            background: #374151;
+            color: #f9fafb;
+        }
+
+            .btn-call.decline:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            }
+
+        /* Accepter */
+        .btn-call.accept {
+            background: #10b981;
+            color: white;
+        }
+
+            .btn-call.accept:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 10px rgba(16, 185, 129, 0.6);
+            }
+</style>
+
+
+
+<div class="chat-container">
+
+    @if (Model is null)
+    {
+        <div> </div>
+        return;
+    }
+
+    <div id="messages" class="chat-body">
+        @{
+            string lastMessageDate = null;
+        }
+
+        @foreach (var m in Model.Messages.OrderBy(x => x.DateEnvoi))
+        {
+            var cls = m.IdEnvoyeur == Model.CurrentUserId ? "sent" : "received";
+            var frCulture = CultureInfo.GetCultureInfo("fr-FR");
+            var messageDateStr = m.DateEnvoi.ToString("dddd MMMM d", frCulture);
+
+            if (lastMessageDate != messageDateStr)
+            {
+                <div class="message-date-divider">@messageDateStr</div>
+                lastMessageDate = messageDateStr;
+            }
+
+            <div class="message @cls" data-id="@m.Id">
+                <div class="sender-name">@m.NomEnvoyeur</div>
+                <span>@m.Message</span>
+                <span class="timestamp">@m.DateEnvoi.ToString("HH:mm")</span>
+
+                <div class="reactions">
+                    <span class="emoji" data-emoji="👍🏻">👍🏻</span>
+                    <span class="emoji" data-emoji="💔">💔</span>
+                    <span class="emoji" data-emoji="🔥">🔥</span>
+                    <span class="emoji" data-emoji="👏">👏</span>
+                </div>
+
+                <div class="reaction-display">
+                    @foreach (var r in m.Reactions)
+                    {
+                        <span>@r.Emoji</span>
+                    }
+                </div>
+            </div>
+        }
+
+        @foreach (var f in Model.Fichiers.OrderBy(f => f.DateCreation))
+        {
+            var cls = f.CreerParIdUtilisateur == Model.CurrentUserId ? "sent" : "received";
+            <div class="message @cls">
+                <a href="@f.FileUrl" download>@("📎 " + f.FileName)</a>
+                <span class="timestamp">@f.DateCreation.ToString("HH:mm")</span>
+            </div>
+        }
+    </div>
+    <!-- Panneau APPEL ENTRANT -->
+    <div id="incomingCallPanel" class="call-panel" style="display:none;">
+        <div class="call-panel-header">
+            <div class="call-panel-icon">
+                <i class="fas fa-phone-alt"></i>
+            </div>
+            <div class="call-panel-texts">
+                <span class="call-panel-title">Appel entrant</span>
+                <span id="incomingCallText" class="call-panel-subtitle">
+                    Quelqu'un t'appelle...
+                </span>
+            </div>
+        </div>
+
+        <div class="call-panel-actions">
+            <button type="button" id="declineCallBtn" class="btn-call decline">
+                <i class="fas fa-phone-slash"></i> Raccrocher
+            </button>
+            <button type="button" id="acceptCallBtn" class="btn-call accept">
+                <i class="fas fa-phone"></i> Accepter
+            </button>
+        </div>
+    </div>
+
+    <!-- Panneau APPEL EN COURS -->
+    <div id="activeCallPanel" class="call-panel" style="display:none;">
+        <div class="call-panel-header">
+            <div class="call-panel-icon">
+                <i class="fas fa-headphones"></i>
+            </div>
+            <div class="call-panel-texts">
+                <span id="activeCallTitle" class="call-panel-title">Appel audio</span>
+                <span id="activeCallSubtitle" class="call-panel-subtitle">
+                    En attente...
+                </span>
+            </div>
+        </div>
+        <audio id="remoteAudio" autoplay></audio>
+        <div class="call-panel-actions">
+            <button type="button" id="hangupCallBtn" class="btn-call decline">
+                <i class="fas fa-phone-slash"></i> Raccrocher
+            </button>
+        </div>
+    </div>
+
+
+    <div class="chat-footer">
+        <button type="button" id="callBtn"><i class="fas fa-phone-alt"></i></button>
+        <button type="button" id="attachBtn"><i class="fas fa-paperclip"></i></button> <input type="file" id="fileInput" style="display:none;" multiple />
+        <input id="messageInput" type="text" placeholder="Écrire un message...">
+        <button type="button" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    const conversationId = @Model?.ConversationId ?? 0;
+    const currentUserId = parseInt(@Model?.CurrentUserId ?? 0);
+    const currentUserName = "@Model.CurrentUserName";
+
+
+    let peerConnection = null;
+    let localStream = null;
+    const remoteAudio = document.getElementById("remoteAudio");
+
+    const iceConfig = {
+        iceServers: [
+            { urls: "stun:stun.l.google.com:19302" }
+        ]
+    };
+
+    async function ensureLocalAudio() {
+        if (localStream) return localStream;
+
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: false
+            });
+            return localStream;
+        } catch (err) {
+            console.error("Erreur getUserMedia audio:", err);
+            alert("Impossible d'accéder au micro.");
+            throw err;
+        }
+    }
+
+    async function createPeerConnectionIfNeeded() {
+        if (peerConnection) return peerConnection;
+
+        peerConnection = new RTCPeerConnection(iceConfig);
+
+        //on reçoit la piste audio
+        peerConnection.addEventListener("track", (event) => {
+            console.log("Remote track reçu:", event.streams);
+            if (remoteAudio) {
+                remoteAudio.srcObject = event.streams[0];
+            }
+        });
+
+        //ICE envoyé par signal r
+        peerConnection.addEventListener("icecandidate", async (event) => {
+            if (event.candidate) {
+                console.log("ICE local:", event.candidate);
+                try {
+                    await connection.invoke(
+                        "SendIceCandidate",
+                        conversationId,
+                        currentUserId,
+                        JSON.stringify(event.candidate)
+                    );
+                } catch (err) {
+                    console.error("Erreur SendIceCandidate:", err);
+                }
+            }
+        });
+
+        // activer le micro
+        const stream = await ensureLocalAudio();
+        stream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, stream);
+        });
+
+        return peerConnection;
+    }
+
+    function cleanupWebRtcCall() {
+        if (peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+        if (localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+            localStream = null;
+        }
+        if (remoteAudio) {
+            remoteAudio.srcObject = null;
+        }
+    }
+
+
+    console.log(currentUserId);
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chathub")
+        .build();
+
+    let lastMessageDate = null;
+    function appendMsg(senderId, senderNom, message, dateIso, reactions=[], messageId) {
+        const box = document.getElementById("messages");
+        const div = document.createElement("div");
+        div.className = "message " + (senderId === currentUserId ? "sent" : "received");
+        div.dataset.id = messageId;
+
+        const dt = new Date(dateIso);
+        const messageDateStr = dt.toLocaleDateString('fr-FR', { weekday: 'long', month: 'long', day: 'numeric' });
+
+        // Insert date divider if the date changed
+        if (lastMessageDate !== messageDateStr) {
+            const dateDiv = document.createElement("div");
+            dateDiv.className = "message-date-divider";
+            dateDiv.textContent = messageDateStr;
+            box.appendChild(dateDiv);
+            lastMessageDate = messageDateStr;
+        }
+
+        // Sender name
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "sender-name";
+        nameDiv.textContent = senderNom;
+        div.appendChild(nameDiv);
+
+        const spanMsg = document.createElement("span");
+        spanMsg.textContent = message;
+        div.appendChild(spanMsg);
+
+        const spanTime = document.createElement("span");
+        spanTime.className = "timestamp";
+        spanTime.textContent = dt.getHours().toString().padStart(2,'0') + ":" + dt.getMinutes().toString().padStart(2,'0');
+        div.appendChild(spanTime);
+
+
+        const reactionContainer = document.createElement("div");
+        reactionContainer.className = "reaction-display";
+        reactions.forEach(r => {
+            const span = document.createElement("span");
+            span.textContent = `${r.Emoji} ${r.Count}`;
+            reactionContainer.appendChild(span);
+        });
+        div.appendChild(reactionContainer);
+
+        // emoji picker
+        const emojiDiv = document.createElement("div");
+        emojiDiv.className = "reactions";
+
+        const emojiList = ["👍🏻","💔","🔥","👏"];
+
+        emojiList.forEach(e => {
+            const span = document.createElement("span");
+            span.className = "emoji";
+            span.dataset.emoji = e;
+            span.textContent = e;
+            emojiDiv.appendChild(span);
+        });
+
+        div.appendChild(emojiDiv);
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    connection.on("ReceiveMessage", (m) => {
+        if (m.conversationId !== conversationId) return;
+        console.log("ReceiveMessage payload:", m);
+        appendMsg(m.senderId, m.senderNom, m.message, m.dateEnvoi, m.reactions ?? [], m.messageId);
+    });
+
+    connection.on("UpdateReaction", (messageId, reactionsSummary) => {
+        const messageDiv = document.querySelector(`.message[data-id='${messageId}']`);
+        if (!messageDiv) return;
+
+        let reactionDisplay = messageDiv.querySelector(".reaction-display");
+        if (!reactionDisplay) {
+            reactionDisplay = document.createElement("div");
+            reactionDisplay.className = "reaction-display";
+            messageDiv.appendChild(reactionDisplay);
+        }
+
+        reactionDisplay.innerHTML = "";
+        reactionsSummary.forEach(r => {
+            const span = document.createElement("span");
+            span.textContent = r.count > 1 ? `${r.emoji} ${r.count}` : `${r.emoji}`;
+            reactionDisplay.appendChild(span);
+            console.log("Rendering reaction:", r.emoji, r.count);
+        });
+    });
+
+    // débuter une connection
+    connection.start()
+        .then(() => connection.invoke("JoinConversation", conversationId))
+        .catch(err => console.error(err));
+
+    // fonction qui attache les émojis aux messages
+    document.addEventListener("click", async (e) => {
+        if (!e.target.classList.contains("emoji")) return;
+
+        const emoji = e.target.dataset.emoji;
+        const messageDiv = e.target.closest(".message");
+        if (!messageDiv) return;
+
+        const messageId = parseInt(messageDiv.dataset.id);
+        const userId = currentUserId;
+
+        console.log("Click → messageId:", messageId, "userId:", userId, "emoji:", emoji);
+
+        try {
+            await connection.invoke("AddReaction", messageId, userId, emoji);
+        } catch (err) {
+            console.error("Reaction click failed:", err);
+        }
+    });
+
+    // envoyer une message
+    document.getElementById("sendBtn").addEventListener("click", async () => {
+        const input = document.getElementById("messageInput");
+        const txt = input.value.trim();
+
+        if (pendingFile) {
+            await sendFile(conversationId);
+            return;
+        }
+
+        if (txt !== "") {
+            await connection.invoke("SendMessage", conversationId, currentUserId, currentUserName, txt);
+            input.value = "";
+        }
+    });
+
+    // envoyer une message avec le bouton ENTER de clavier
+    document.getElementById("messageInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("sendBtn").click();
+    });
+
+    let pendingFile = null;
+
+    document.getElementById("attachBtn").addEventListener("click", () => {
+        document.getElementById("fileInput").click();
+    });
+
+    document.getElementById("fileInput").addEventListener("change", async function () {
+        const file = this.files[0];
+        if (!file) return;
+
+        pendingFile = file;
+
+        document.getElementById("messageInput").value = "📎 " + file.name;
+
+        this.value = "";
+    });
+
+    async function sendFile(conversationId) {
+
+        if (!pendingFile) return;
+
+        const formData = new FormData();
+        formData.append("file", pendingFile);
+        formData.append("conversationId", conversationId);
+
+        const response = await fetch("/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+
+        connection.invoke("SendFile", currentUserId, result.fileName, result.fileUrl);
+
+        pendingFile = null;
+        document.getElementById("messageInput").value = "";
+    }
+
+    connection.on("ReceiveFile", (senderId, fileName, fileUrl) => {
+        appendFileMessage(senderId, fileName, fileUrl);
+    });
+
+    function appendFileMessage(senderId, fileName, fileUrl) {
+        const box = document.getElementById("messages");
+        const div = document.createElement("div");
+
+        div.className = "message " + (senderId === currentUserId ? "sent" : "received");
+
+        //pouvoir installer
+        const a = document.createElement("a");
+        a.href = fileUrl;
+        a.download = fileName;
+        a.textContent = "📎 " + fileName;
+
+        div.appendChild(a);
+
+        const spanTime = document.createElement("span");
+        spanTime.className = "timestamp";
+        const now = new Date();
+        spanTime.textContent =
+            now.getHours().toString().padStart(2, '0') + ":" +
+            now.getMinutes().toString().padStart(2, '0');
+
+        div.appendChild(spanTime);
+
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+
+    let currentCall = null;
+    let isInCall = false;
+
+    //ui pour appel
+    const incomingCallPanel = document.getElementById("incomingCallPanel");
+    const incomingCallText  = document.getElementById("incomingCallText");
+    const activeCallPanel   = document.getElementById("activeCallPanel");
+    const activeCallTitle   = document.getElementById("activeCallTitle");
+    const activeCallSubtitle= document.getElementById("activeCallSubtitle");
+    const acceptCallBtn  = document.getElementById("acceptCallBtn");
+    const declineCallBtn = document.getElementById("declineCallBtn");
+    const hangupCallBtn  = document.getElementById("hangupCallBtn");
+    function showIncomingPanel(text) {
+        if (incomingCallText) incomingCallText.textContent = text;
+        if (incomingCallPanel) incomingCallPanel.style.display = "flex";
+    }
+    function hideIncomingPanel() {
+        if (incomingCallPanel) incomingCallPanel.style.display = "none";
+    }
+    function showActivePanel(title, subtitle) {
+        if (activeCallTitle) activeCallTitle.textContent = title;
+        if (activeCallSubtitle) activeCallSubtitle.textContent = subtitle;
+        if (activeCallPanel) activeCallPanel.style.display = "flex";
+    }
+    function hideActivePanel() {
+        if (activeCallPanel) activeCallPanel.style.display = "none";
+    }
+
+    //quelqu'un démarre un appel
+    connection.on("IncomingAudioCall", (data) => {
+        console.log("IncomingAudioCall:", data);
+        if (data.conversationId !== conversationId) return;
+
+        currentCall = data;
+
+        //si c'est moi qui appelle
+        if (data.callerId === currentUserId) {
+            isInCall = true;
+            hideIncomingPanel();
+            showActivePanel("Appel audio", "En attente de réponse...");
+        } else {
+            //si je suis le destinataire
+            isInCall = false;
+            hideActivePanel();
+            showIncomingPanel(`${data.callerNom} t'appelle en audio.`);
+        }
+    });
+
+    //quelqu'un accepte l'appel
+    connection.on("AudioCallAccepted", async (data) => {
+        console.log("AudioCallAccepted:", data);
+        if (data.conversationId !== conversationId) return;
+
+        isInCall = true;
+        hideIncomingPanel();
+        showActivePanel("Appel audio", `Appel en cours avec ${data.userNom}`);
+
+        //si c'est moi le caller je crée l'offer
+        if (currentCall && currentCall.callerId === currentUserId) {
+            try {
+                const pc = await createPeerConnectionIfNeeded();
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                await connection.invoke(
+                    "SendWebRtcOffer",
+                    conversationId,
+                    currentUserId,
+                    JSON.stringify(offer)
+                );
+                console.log("Offer envoyée.");
+            } catch (err) {
+                console.error("Erreur création/envoi offer:", err);
+            }
+        }
+    });
+
+    // Offer WebRTC reçue
+    connection.on("ReceiveWebRtcOffer", async (data) => {
+        console.log("ReceiveWebRtcOffer:", data);
+        if (data.conversationId !== conversationId) return;
+
+        // Je ne traite pas ma propre offer
+        if (data.fromUserId === currentUserId) return;
+
+        try {
+            const pc = await createPeerConnectionIfNeeded();
+
+            const remoteOffer = JSON.parse(data.sdpOffer);
+            await pc.setRemoteDescription(new RTCSessionDescription(remoteOffer));
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            await connection.invoke(
+                "SendWebRtcAnswer",
+                conversationId,
+                currentUserId,
+                JSON.stringify(answer)
+            );
+            console.log("Answer envoyée.");
+        } catch (err) {
+            console.error("Erreur traitement offer / envoi answer:", err);
+        }
+    });
+
+    // Answer WebRTC reçue
+    connection.on("ReceiveWebRtcAnswer", async (data) => {
+        console.log("ReceiveWebRtcAnswer:", data);
+        if (data.conversationId !== conversationId) return;
+
+        // Je ne traite pas ma propre answer
+        if (data.fromUserId === currentUserId) return;
+
+        try {
+            const pc = await createPeerConnectionIfNeeded();
+            const remoteAnswer = JSON.parse(data.sdpAnswer);
+            await pc.setRemoteDescription(new RTCSessionDescription(remoteAnswer));
+            console.log("Answer appliquée.");
+        } catch (err) {
+            console.error("Erreur setRemoteDescription(answer):", err);
+        }
+    });
+
+    // ICE candidates entrants
+    connection.on("ReceiveIceCandidate", async (data) => {
+        console.log("ReceiveIceCandidate:", data);
+        if (data.conversationId !== conversationId) return;
+
+        if (data.fromUserId === currentUserId) return;
+
+        try {
+            const pc = await createPeerConnectionIfNeeded();
+            const candidate = new RTCIceCandidate(JSON.parse(data.candidate));
+            await pc.addIceCandidate(candidate);
+            console.log("ICE candidate ajoutée.");
+        } catch (err) {
+            console.error("Erreur addIceCandidate:", err);
+        }
+    });
+
+    //terminé un appel
+    connection.on("AudioCallEnded", (data) => {
+        console.log("AudioCallEnded:", data);
+        if (data.conversationId !== conversationId) return;
+
+        isInCall = false;
+        currentCall = null;
+
+        hideIncomingPanel();
+        hideActivePanel();
+        cleanupWebRtcCall();
+    });
+
+    //démarrer un appel
+    document.getElementById("callBtn").addEventListener("click", async () => {
+        try {
+            console.log("StartAudioCall → conv:", conversationId, "user:", currentUserId, currentUserName);
+
+            isInCall = true;
+            currentCall = {
+                conversationId,
+                callerId: currentUserId,
+                callerNom: currentUserName
+            };
+            hideIncomingPanel();
+            showActivePanel("Appel audio", "En attente de réponse...");
+
+            await connection.invoke("StartAudioCall", conversationId, currentUserId, currentUserName);
+        } catch (err) {
+            console.error("Erreur StartAudioCall:", err);
+        }
+    });
+    //accepter l'Appel
+    if (acceptCallBtn) {
+        acceptCallBtn.addEventListener("click", async () => {
+            if (!currentCall) return;
+
+            try {
+                await connection.invoke(
+                    "AcceptAudioCall",
+                    conversationId,
+                    currentUserId,
+                    currentUserName
+                );
+
+                isInCall = true;
+                hideIncomingPanel();
+                showActivePanel(
+                    "Appel audio",
+                    `Appel en cours avec ${currentCall.callerNom ?? "l'autre participant"}`
+                );
+            } catch (err) {
+                console.error("Erreur AcceptAudioCall:", err);
+            }
+        });
+    }
+
+    //Raccrocher/decline
+    if (declineCallBtn) {
+        declineCallBtn.addEventListener("click", async () => {
+            try {
+                await connection.invoke("EndAudioCall", conversationId, currentUserId);
+            } catch (err) {
+                console.error("Erreur EndAudioCall (decline):", err);
+            }
+
+            isInCall = false;
+            currentCall = null;
+            hideIncomingPanel();
+            hideActivePanel();
+            cleanupWebRtcCall();
+        });
+    }
+    if (hangupCallBtn) {
+        hangupCallBtn.addEventListener("click", async () => {
+            try {
+                await connection.invoke("EndAudioCall", conversationId, currentUserId);
+            } catch (err) {
+                console.error("Erreur EndAudioCall (hangup):", err);
+            }
+
+            isInCall = false;
+            currentCall = null;
+            hideIncomingPanel();
+            hideActivePanel();
+            cleanupWebRtcCall();
+        });
+    }
+
+</script>

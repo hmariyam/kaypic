@@ -1,0 +1,520 @@
+﻿@{
+    Layout = null;
+    var currentPath = ViewContext.HttpContext.Request.Path;
+    var partial = (ViewData["PartialName"] as string) ?? "";
+}
+@model HomeVM
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Page Coach</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    @await Html.PartialAsync("LayoutHome")
+
+    <div class="container">
+        <aside>
+            <nav>
+                <a href="/Coach/CoachMessage">Messages</a>
+                <a href="/Coach/CoachCalendrier">Calendrier</a>
+                <a href="/Coach/CoachAnnonce">Annonces</a>
+            </nav>
+            @if (currentPath == "/Coach/CoachAnnonce")
+            {
+                <div class="filters">
+                    <h3>Filtres des annonces</h3>
+                    <label><input type="checkbox" checked> Épinglées</label>
+                    <label><input type="checkbox" checked> Urgentes</label>
+                    <label><input type="checkbox" checked> Importantes</label>
+                    <label><input type="checkbox" checked> Régulier</label>
+                </div>
+            }
+            @if (currentPath == "/Coach/CoachCalendrier")
+            {
+                <div class="filters">
+                    <h3>Filtres des événements</h3>
+                    <label><input type="checkbox" id="filter-match" checked data-filter="match"> Matchs</label>
+                    <label><input type="checkbox" id="filter-entrainement" checked data-filter="entrainement"> Entraînements</label>
+                    <label><input type="checkbox" id="filter-reunion" checked data-filter="reunion"> Réunion</label>
+                </div>
+            }
+            @if (currentPath.StartsWithSegments("/Coach/CoachMessage") || currentPath.StartsWithSegments("/Coach/Conversation"))
+            {
+                <div class="conversation-list">
+                    <h3>Conversations <i class="fas fa-plus toggle-submenu" onclick="openGroupCreation()"></i></h3>
+                    <ul class="user-list">
+                        @foreach (var conv in Model.Conversations)
+                        {
+                            var isActive = currentPath.ToString().Contains($"/Conversation/{conv.Id}");
+                            <li class="user-item @(isActive ? "active" : "")">
+                                <a href="/Coach/Conversation/@conv.Id" class="name"> - @conv.Titre</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <!-- Fenêtre de la création du groupe -->
+            <div id="groupCreationModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+                <div style="background: white; padding: 20px; border-radius: 10px; width: 400px; max-width: 90%;">
+                    <h3>Créer un nouveau groupe</h3>
+                    <input type="text" id="newGroupName" placeholder="Nom du groupe" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px;" />
+
+                    <div id="availableUsersList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin: 10px 0;">
+                        <p>Chargement des utilisateurs...</p>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                        <button onclick="closeGroupCreation()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Annuler</button>
+                        <button onclick="createGroup()" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Créer le groupe</button>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <main>
+            @if (!string.IsNullOrEmpty(partial))
+            {
+                if (partial == "Components/Coach/CoachMessage")
+                {
+
+                    @await Html.PartialAsync(partial, Model.Current)
+                }
+                else if (partial == "Components/Coach/CoachAnnonce")
+                {
+
+                    @await Html.PartialAsync(partial, Model.Annonces ?? new List<Kaypic_Web3.Models.Annonce>())
+                }
+                else if (partial == "Components/Coach/CoachCalendrier")
+                {
+
+                    @await Html.PartialAsync(partial, Model.Calendriers ?? Enumerable.Empty<Kaypic_Web3.Models.Calendrier>())
+                }
+                else
+                {
+                    @await Html.PartialAsync(partial)
+                }
+            }
+        </main>
+    </div>
+</body>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f5f6fa;
+        color: #333;
+    }
+
+    /* Header */
+    header {
+        background-color: #0d47ff;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    /* Layout */
+    .container {
+        display: flex;
+        width: 100%;
+        min-height: calc(100vh - 60px);
+    }
+
+    /* Sidebar */
+    aside {
+        width: 250px;
+        background: #f8f9fb;
+        border-right: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+
+    /* Navigation dans aside */
+    nav {
+        display: flex;
+        flex-direction: column;
+        border-bottom: 1px solid #ddd;
+    }
+
+        nav a {
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #333;
+            border-left: 3px solid transparent;
+        }
+
+            nav a.active {
+                background: #fff;
+                border-left: 3px solid #0d47ff;
+                font-weight: bold;
+                color: #0d47ff;
+            }
+
+            nav a:hover {
+                background: #eee;
+            }
+
+    /* Filtres */
+    .filters {
+        padding: 20px;
+    }
+
+        .filters h3 {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .filters label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+    /* Main */
+    main {
+        flex: 1;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .main-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: black;
+        color: white;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+        .main-header h2 {
+            margin: 0;
+        }
+
+    .btn {
+        background: #0d47ff;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    /* Sections */
+    section {
+        margin-bottom: 25px;
+    }
+
+        section h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #0d47ff;
+        }
+
+    /* Cards */
+    .card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 4px solid transparent;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+        .card.pinned {
+            background: #eef5ff;
+            border-left: 4px solid #0d47ff;
+        }
+
+        .card .title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+    .badge {
+        display: inline-block;
+        font-size: 12px;
+        padding: 3px 7px;
+        border-radius: 5px;
+        margin-left: 5px;
+    }
+
+    .urgent {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+
+    .important {
+        background: #fff8e1;
+        color: #f9a825;
+    }
+
+    .meta {
+        font-size: 12px;
+        color: #666;
+        margin-top: 8px;
+    }
+
+    .btn-mini {
+        background: #0d47ff;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        font-size: 12px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-mini:hover {
+        background: #0836cc;
+        }
+
+    nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .menu-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .menu-item .toggle-submenu {
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+    .submenu {
+        display: none;
+        flex-direction: column;
+        margin-left: 20px;
+        margin-top: 4px;
+        list-style: none;
+        padding: 0;
+    }
+
+        .submenu li {
+            margin: 4px 0;
+        }
+
+            .submenu li a {
+                font-size: 14px;
+                color: #444;
+                text-decoration: none;
+            }
+
+                .submenu li a:hover {
+                    text-decoration: underline;
+                }
+
+        .submenu.active {
+            display: flex;
+        }
+
+
+        .conversation-list h3 {
+            font-size: 14px;
+            padding: 12px 15px;
+            margin-top: 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+    /* Remove default list style */
+    .user-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Each conversation entry */
+    .user-item {
+        padding: 12px 15px;
+        border-bottom: none; /* removes the line */
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+        .user-item:hover {
+            background-color: #f3f3f3;
+        }
+
+        /* Active conversation */
+        .user-item.active {
+            background-color: lightgray;
+        }
+
+            .user-item.active .name {
+                color: black;
+            }
+
+        /* Conversation title */
+        .user-item .name {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            display: block;
+        }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const toggles = document.querySelectorAll(".toggle-submenu");
+        toggles.forEach(toggle => {
+            toggle.addEventListener("click", () => {
+                const submenu = toggle.parentElement.querySelector(".submenu");
+                submenu.classList.toggle("active");
+                // optional: rotate the icon when active
+                toggle.classList.toggle("fa-rotate-45");
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterCheckboxes = document.querySelectorAll('.filters input[type="checkbox"]');
+
+        const defaultFilters = {
+            "match": true,
+            "entrainement": true,
+            "reunion": true
+        };
+
+        const savedFilters = JSON.parse(localStorage.getItem('calendarFilters') || JSON.stringify(defaultFilters));
+
+        filterCheckboxes.forEach(checkbox => {
+            const filterType = checkbox.dataset.filter;
+            checkbox.checked = savedFilters[filterType] !== false;
+
+            checkbox.addEventListener('change', function() {
+                const currentFilters = JSON.parse(localStorage.getItem('calendarFilters') || JSON.stringify(defaultFilters));
+                currentFilters[filterType] = this.checked;
+                localStorage.setItem('calendarFilters', JSON.stringify(currentFilters));
+            });
+        });
+    });
+
+    // Établir une connexion
+    const connexion = new signalR.HubConnectionBuilder()
+        .withUrl("/chathub")
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    // Débuter une connexion
+    connexion.start();
+
+    // Ouvrir le modal
+    function openGroupCreation() {
+        document.getElementById("groupCreationModal").style.display = "flex";
+        loadAvailableUsers(); // Load users when opening
+    }
+
+    // Fermer le modal
+    function closeGroupCreation() {
+        document.getElementById("groupCreationModal").style.display = "none";
+    }
+
+    // Générer les utilisateurs
+    async function loadAvailableUsers() {
+        const container = document.getElementById("availableUsersList");
+        container.innerHTML = "Chargement des utilisateurs...";
+
+        const response = await fetch('/Home/GetAllowedUsers');
+        const users = await response.json();
+        console.log(users);
+        container.innerHTML = "";
+
+        if (!users || users.length === 0) {
+            container.innerHTML = "<p>Aucun utilisateur disponible</p>";
+            return;
+        }
+
+        users.forEach(u => {
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.id = `user_${u.customId}`;
+            checkbox.value = u.customId;
+
+            const label = document.createElement("label");
+            label.htmlFor = checkbox.id;
+            label.textContent = ` ${u.nom} ${u.prenom}`;
+
+            const div = document.createElement("div");
+            div.style.marginBottom = "5px";
+            div.appendChild(checkbox);
+            div.appendChild(label);
+
+            container.appendChild(div);
+        });
+    }
+
+    connexion.on("GroupCreated", function(conversationId, titre) {
+        const userList = document.querySelector(".conversation-list .user-list");
+        if (!userList) return;
+
+        const li = document.createElement("li");
+        li.classList.add("user-item");
+
+        const a = document.createElement("a");
+        a.href = `/Coach/Conversation/${conversationId}`;
+        a.classList.add("name");
+        a.textContent = `- ${titre}`;
+
+        li.appendChild(a);
+        userList.appendChild(li);
+
+        closeGroupCreation();
+    });
+
+    async function createGroup() {
+        const groupName = document.getElementById("newGroupName").value.trim();
+        if (!groupName) return alert("Veuillez entrer un nom pour le groupe");
+
+        const selectedUserIds = Array.from(document.querySelectorAll("#availableUsersList input:checked"))
+                                     .map(cb => parseInt(cb.value));
+
+        if (selectedUserIds.length === 0)
+            return alert("Veuillez sélectionner au moins un utilisateur");
+
+        try {
+            if (connexion.state !== signalR.HubConnectionState.Connected) {
+                await connexion.start();
+            }
+
+            const conversationId = await connexion.invoke("CreateGroup", groupName, selectedUserIds);
+
+            window.location.href = `/Coach/Conversation/${conversationId}`;
+
+        } catch (err) {
+            console.error(err);
+            alert("Erreur lors de la création du groupe.");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var accountDeletionScheduled = @Html.Raw(Json.Serialize(TempData["AccountDeletionScheduled"] ?? false));
+
+        if (accountDeletionScheduled) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Compte programmé pour suppression',
+                text: 'Votre compte sera supprimé dans 30 jours.',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+</script>
+</html>

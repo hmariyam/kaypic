@@ -1,0 +1,156 @@
+﻿@model Kaypic_Web3.Models.Annonce
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Delete";
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f5f6fa;
+        color: #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        flex-direction: column;
+    }
+
+    .top-banner {
+        background-color: #0d47ff;
+        color: white;
+        padding: 10px 20px;
+        width: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 999;
+        text-align: right;
+    }
+
+        .top-banner a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+            .top-banner a:hover {
+                text-decoration: none;
+                color: white;
+            }
+
+    .formulaire {
+        margin-top: 100px;
+        background: #fff;
+        border-radius: 12px;
+        padding: 40px 30px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        font-size: 14px;
+    }
+
+        .formulaire h1 {
+            font-size: 24px;
+            color: #0d47ff;
+            margin-bottom: 20px;
+        }
+
+    .details {
+        text-align: left;
+        margin-bottom: 25px;
+    }
+
+        .details dt {
+            font-weight: bold;
+            color: #0d47ff;
+        }
+
+        .details dd {
+            margin-bottom: 10px;
+        }
+
+    .btn {
+        background: #0d47ff;
+        color: white;
+        text-decoration: none;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+        transition: background 0.2s;
+    }
+
+        .btn:hover {
+            background: #0836cc;
+        }
+
+        .btn-danger {
+            background: #c62828;
+        }
+
+            .btn-danger:hover {
+                background: #a81f1f;
+            }
+
+    .links {
+        margin-top: 18px;
+        font-size: 16px;
+    }
+
+        .links a {
+            color: #0d47ff;
+            text-decoration: none;
+        }
+
+            .links a:hover {
+                text-decoration: underline;
+            }
+</style>
+</head>
+
+<body>
+    <div class="top-banner">
+        <a asp-action="CoachAnnonce" asp-controller="Home">Retourner</a>
+    </div>
+
+    <div class="formulaire">
+        <h1>Supprimer une annonce</h1>
+        <p>Êtes-vous sûr de vouloir supprimer cette annonce ?</p>
+        <hr />
+
+        <dl class="details">
+            <dt>@Html.DisplayNameFor(model => model.Titre)</dt>
+            <dd>@Html.DisplayFor(model => model.Titre)</dd>
+
+            <dt>@Html.DisplayNameFor(model => model.Description)</dt>
+            <dd>@Html.DisplayFor(model => model.Description)</dd>
+
+            <dt>@Html.DisplayNameFor(model => model.priorite)</dt>
+            <dd>@Html.DisplayFor(model => model.priorite)</dd>
+
+            <dt>@Html.DisplayNameFor(model => model.Pinned)</dt>
+            <dd>@Html.DisplayFor(model => model.Pinned)</dd>
+
+            <dt>@Html.DisplayNameFor(model => model.Equipe)</dt>
+            <dd>@Html.DisplayFor(model => model.Equipe.Id)</dd>
+        </dl>
+
+        <form asp-action="Delete">
+            <input type="hidden" asp-for="Id" />
+            <input type="submit" value="Supprimer" class="btn btn-danger mb-3" />
+        </form>
+    </div>
+</body>
+</html>

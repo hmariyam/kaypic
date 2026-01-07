@@ -1,0 +1,135 @@
+﻿@model List<Annonce>
+<style>
+    #btnSupprimer {
+        background: red;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        font-size: 12px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        #btnSupprimer:hover {
+            background: #cc0000;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+</style>
+<section class="main-header">
+    <h2>Mes Annonces</h2>
+    <a asp-controller="Annonces" asp-action="Create"> <button class="btn">+ Nouvelle annonce</button> </a>
+</section>
+<section>
+    <h3>Annonces épinglées</h3>
+    @foreach (Annonce annonce in Model)
+    {
+        if (annonce.Pinned == true)
+        {
+            <div class="card pinned" data-annonce-pinned="@annonce.Pinned.ToString().ToLower()" data-annonce-priorite="@annonce.priorite.ToString().ToLower()">
+                <div class="title">
+                    @annonce.Titre
+                    <span class="badge urgent">@annonce.priorite</span>
+                </div>
+                <p>@annonce.Description</p>
+                <a asp-controller="Annonces" asp-route-id="@annonce.Id" asp-action="Edit">
+                    <button class="btn-mini">Modifier</button>
+                    </a>
+                <a asp-controller="Annonces" asp-route-id="@annonce.Id" asp-action="Delete">
+                    <button class="btnSupprimer" id="btnSupprimer">Supprimer</button>
+                </a>
+            </div>
+        }
+    }
+</section>
+<section>
+    <h3>Toutes les annonces</h3>
+    @foreach (Annonce annonce in Model)
+    {
+        if (annonce.Pinned == false)
+        {
+            <div class="card pinned" data-annonce-pinned="@annonce.Pinned.ToString().ToLower()" data-annonce-priorite="@annonce.priorite.ToString().ToLower()">
+                <div class="title">
+                    @annonce.Titre
+                    <span class="badge urgent">@annonce.priorite</span>
+                </div>
+                <p>@annonce.Description</p>
+                <a asp-controller="Annonces" asp-route-id="@annonce.Id" asp-action="Edit">
+                    <button class="btn-mini">Modifier</button>
+                </a>
+                <a asp-controller="Annonces" asp-route-id="@annonce.Id" asp-action="Delete">
+                    <button class="btnSupprimer" id="btnSupprimer">Supprimer</button>
+                </a>
+            </div>
+        }
+    }
+</section>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const defaultFilters = {
+            "pinned": true,
+            "Urgent": true,
+            "Important": true,
+            "Régulier": true
+        };
+
+        const savedFilters = JSON.parse(localStorage.getItem('annonceFilters') || JSON.stringify(defaultFilters));
+
+        const filterCheckboxes = document.querySelectorAll('.filters input[type="checkbox"]');
+        filterCheckboxes.forEach(checkbox => {
+            const labelText = checkbox.parentElement.innerText.trim();
+
+            let key;
+            if (labelText.includes("Épingl")) key = "pinned";
+            else if (labelText.includes("Urgent")) key = "Urgent";
+            else if (labelText.includes("Important")) key = "Important";
+            else key = "Régulier";
+
+            checkbox.checked = savedFilters[key] !== false;
+
+            checkbox.addEventListener('change', function() {
+                savedFilters[key] = this.checked;
+                localStorage.setItem('annonceFilters', JSON.stringify(savedFilters));
+                applyFilters();
+            });
+        });
+
+        function normalize(text) {
+            // Supprime les accents et met tout en minuscule
+            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
+        function applyFilters() {
+            const filters = JSON.parse(localStorage.getItem('annonceFilters') || JSON.stringify(defaultFilters));
+            const annonces = document.querySelectorAll('[data-annonce-pinned]');
+
+            annonces.forEach(card => {
+                const isPinned = card.dataset.annoncePinned === "true";
+                const priorite = normalize(card.dataset.annoncePriorite || "");
+                let visible = true;
+
+                // Filtre épinglées
+                if (!filters.pinned && isPinned)
+                    visible = false;
+
+                // Filtre par priorité (normalisé)
+                if (visible) {
+                    if (priorite.includes("urgent") && !filters.Urgent)
+                        visible = false;
+                    if (priorite.includes("important") && !filters.Important)
+                        visible = false;
+                    if (priorite.includes("regulier") && !filters.Régulier)
+                        visible = false;
+                }
+
+                card.style.display = visible ? 'block' : 'none';
+            });
+        }
+
+        applyFilters();
+    });
+</script>

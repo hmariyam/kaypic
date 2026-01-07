@@ -1,0 +1,216 @@
+﻿@model Kaypic_Web3.Models.Annonce
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor;
+@{
+    Layout = null;
+}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f6fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        /* Top banner */
+        .top-banner {
+            background-color: #0d47ff;
+            color: white;
+            padding: 10px 20px;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 999;
+            text-align: right;
+        }
+
+            .top-banner a {
+                color: white;
+                text-decoration: none;
+                font-weight: bold;
+                font-size: 18px;
+            }
+
+                .top-banner a:hover {
+                    text-decoration: none;
+                    color: white;
+                }
+
+        /* Form card */
+        .formulaire {
+            margin-top: 100px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            font-size: 14px;
+        }
+
+            .formulaire h1 {
+                font-size: 24px;
+                color: #0d47ff;
+                margin-bottom: 25px;
+            }
+
+        .form-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 6px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            .form-group input,
+            .form-group select {
+                width: 100%;
+                padding: 12px;
+                border-radius: 6px;
+                border: 1px solid #ccc;
+                font-size: 14px;
+                box-sizing: border-box;
+            }
+
+        .btn {
+            background: #0d47ff;
+            color: white;
+            text-decoration: none;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+            .btn:hover {
+                background: #0836cc;
+                color: white;
+            }
+
+        .alert {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .links {
+            margin-top: 18px;
+            font-size: 16px;
+        }
+
+            .links a {
+                color: #0d47ff;
+                text-decoration: none;
+            }
+
+                .links a:hover {
+                    text-decoration: underline;
+                }
+
+        /* Small checkbox */
+        .custom-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin: 0;
+            display: inline-block;
+            vertical-align: middle;
+            appearance: none;
+            border: 2px solid #0d47ff;
+            border-radius: 3px;
+            background-color: white;
+            transition: background 0.2s ease;
+        }
+
+            .custom-checkbox:checked {
+                background-color: #0d47ff;
+                border-color: #0d47ff;
+            }
+
+                .custom-checkbox:checked::after {
+                    content: "";
+                    display: block;
+                    position: relative;
+                    top: 1px;
+                    left: 4px;
+                    width: 4px;
+                    height: 8px;
+                    border: solid white;
+                    border-width: 0 2px 2px 0;
+                    transform: rotate(45deg);
+                }
+    </style>
+</head>
+
+<div class="top-banner">
+    <a asp-action="CoachAnnonce" asp-controller="Home">Retourner</a>
+</div>
+
+<div class="formulaire">
+    <h1>Créer une Annonce</h1>
+    <hr />
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert">@ViewBag.ErrorMessage</div>
+    }
+
+    <form asp-controller="Annonces" asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="form-group">
+            <label asp-for="Titre"></label>
+            <input asp-for="Titre" class="form-control" />
+            <span asp-validation-for="Titre" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Description"></label>
+            <input asp-for="Description" class="form-control" />
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="priorite"></label>
+            <select asp-for="priorite" class="form-control"
+                    asp-items="Html.GetEnumSelectList<Kaypic_Web3.Models.Priorite>()">
+            </select>
+            <span asp-validation-for="priorite" class="text-danger"></span>
+        </div>
+
+        <div class="form-group text-start d-flex align-items-center">
+            <label class="me-2 fw-bold" style="margin-bottom: 0;">
+                @Html.DisplayNameFor(model => model.Pinned):
+            </label>
+            <input type="checkbox" asp-for="Pinned" class="custom-checkbox" />
+        </div>
+
+        <input type="submit" value="Créer" class="btn" />
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

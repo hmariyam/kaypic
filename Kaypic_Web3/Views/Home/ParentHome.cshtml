@@ -1,0 +1,542 @@
+﻿@{
+    Layout = null;
+    var currentPath = ViewContext.HttpContext.Request.Path;
+    var partial = (ViewData["PartialName"] as string) ?? "";
+}
+@model HomeVM
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Page Parent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    @await Html.PartialAsync("LayoutHome")
+
+    <div class="container">
+        <aside>
+            <nav>
+                <a href="/Parent/ParentMessage">Messages</a>
+                <a href="/Parent/ParentCalendrier">Calendrier</a>
+                <a href="/Parent/ParentAnnonce">Annonces</a>
+            </nav>
+            @if (currentPath == "/Parent/ParentAnnonce")
+            {
+                <div class="filters">
+                    <h3>Filtres des annonces</h3>
+                    <label><input type="checkbox" checked> Épinglées</label>
+                    <label><input type="checkbox" checked> Urgentes</label>
+                    <label><input type="checkbox" checked> Importantes</label>
+                    <label><input type="checkbox" checked> Régulier</label>
+                </div>
+            }
+            @if (currentPath == "/Parent/ParentCalendrier")
+            {
+                <div class="filters">
+                    <h3>Filtres des événements</h3>
+                    <label><input type="checkbox" id="filter-match" checked data-filter="match"> Matchs</label>
+                    <label><input type="checkbox" id="filter-entrainement" checked data-filter="entrainement"> Entraînements</label>
+                    <label><input type="checkbox" id="filter-reunion" checked data-filter="reunion"> Réunion</label>
+                </div>
+            }
+            @if (currentPath.StartsWithSegments("/Parent/ParentMessage") || currentPath.StartsWithSegments("/Parent/Conversation"))
+            {
+                <div class="conversation-list">
+                    <h3>Conversations <i class="fas fa-plus toggle-submenu" onclick="openGroupCreation()"></i></h3>
+                    <ul class="user-list">
+                        @foreach (var conv in Model.Conversations)
+                        {
+                            var isActive = currentPath.ToString().Contains($"/Conversation/{conv.Id}");
+                            <li class="user-item @(isActive ? "active" : "")">
+                                <a href="/Parent/Conversation/@conv.Id" class="name"> - @conv.Titre </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <!-- Fenêtre de la création du groupe -->
+            <div id="groupCreationModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+                <div style="background: white; padding: 20px; border-radius: 10px; width: 400px; max-width: 90%;">
+                    <h3>Créer un nouveau groupe</h3>
+                    <input type="text" id="newGroupName" placeholder="Nom du groupe" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px;" />
+
+                    <div id="availableUsersList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin: 10px 0;">
+                        <p>Chargement des utilisateurs...</p>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                        <button onclick="closeGroupCreation()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Annuler</button>
+                        <button onclick="createGroup()" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Créer le groupe</button>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <main>
+            @if (!string.IsNullOrEmpty(partial))
+            {
+                if (partial == "Components/Parent/ParentMessage")
+                {
+                    @await Html.PartialAsync(partial, Model.Current)
+                }
+                else if (partial == "Components/Parent/ParentAnnonce")
+                {
+                    @await Html.PartialAsync(partial, Model.Annonces ?? new List<Kaypic_Web3.Models.Annonce>())
+                }
+                else if (partial == "Components/Parent/ParentCalendrier")
+                {
+                    @await Html.PartialAsync(partial, Model.Calendriers ?? Enumerable.Empty<Kaypic_Web3.Models.Calendrier>())
+                }
+                else
+                {
+                    @await Html.PartialAsync(partial)
+                }
+            }
+        </main>
+
+
+        <div class="chatbot-support">
+            <button id="chatbot-btn">💬</button>
+
+            <div id="chatbot-window" class="chatbot-window hidden">
+                <div class="chat-header">Chatbot</div>
+                <div id="chat-body" class="chat-body">
+                    <p class="bot-msg">Salut! Comment puis-je vous aider aujourd'hui?</p>
+                    <div class="chat-questions">
+                        <button class="question">Quels sont les noms des coachs disponibles?</button>
+                        <button class="question">Quand est mon prochain événement?</button>
+                        <button class="question">Comment puis-je créer un nouveau groupe?</button>
+                        <button class="question">Comment puis-je contacter le support?</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/site.js"></script>
+</body>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f5f6fa;
+        color: #333;
+    }
+
+    /* --- CHATBOT --- */
+    .chatbot-support {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+
+    #chatbot-btn {
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        font-size: 26px;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        transition: all 0.2s ease;
+    }
+
+        #chatbot-btn:hover {
+            background-color: #1e40af;
+            transform: scale(1.05);
+        }
+
+    #chatbot-window {
+        position: absolute;
+        bottom: 70px;
+        right: 0;
+        width: 300px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .chat-header {
+        background: #2563eb;
+        color: white;
+        padding: 10px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .chat-body {
+        padding: 10px;
+        font-family: Arial, sans-serif;
+        height: 250px;
+        overflow-y: auto;
+    }
+
+    .chat-questions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+        .chat-questions button {
+            background: #f5f6fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.2s;
+        }
+
+            .chat-questions button:hover {
+                background: #e3e9ff;
+            }
+
+    .user-msg, .bot-msg {
+        padding: 8px;
+        border-radius: 8px;
+        margin: 6px 0;
+    }
+
+    .user-msg {
+        background-color: #dcdcff;
+        text-align: right;
+    }
+
+    .bot-msg {
+        background-color: #e4ffe4;
+        text-align: left;
+    }
+
+    /* --- LAYOUT --- */
+    .container {
+        display: flex;
+        width: 100%;
+        min-height: calc(100vh - 60px);
+    }
+
+    aside {
+        width: 250px;
+        background: #f8f9fb;
+        border-right: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+
+    nav {
+        display: flex;
+        flex-direction: column;
+        border-bottom: 1px solid #ddd;
+    }
+
+        nav a {
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #333;
+            border-left: 3px solid transparent;
+        }
+
+            nav a.active {
+                background: #fff;
+                border-left: 3px solid #0d47ff;
+                font-weight: bold;
+                color: #0d47ff;
+            }
+
+            nav a:hover {
+                background: #eee;
+            }
+
+    .filters {
+        padding: 20px;
+    }
+
+        .filters h3 {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .filters label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+    main {
+        flex: 1;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .main-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: black;
+        color: white;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+        .main-header h2 {
+            margin: 0;
+        }
+
+    .btn {
+        background: #0d47ff;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    section {
+        margin-bottom: 25px;
+    }
+
+        section h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #0d47ff;
+        }
+
+    .card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 4px solid transparent;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+        .card.pinned {
+            background: #eef5ff;
+            border-left: 4px solid #0d47ff;
+        }
+
+        .card .title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+    .badge {
+        display: inline-block;
+        font-size: 12px;
+        padding: 3px 7px;
+        border-radius: 5px;
+        margin-left: 5px;
+    }
+
+    .urgent {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+
+    .important {
+        background: #fff8e1;
+        color: #f9a825;
+    }
+
+    .meta {
+        font-size: 12px;
+        color: #666;
+        margin-top: 8px;
+    }
+
+    .conversation-list h3 {
+        font-size: 14px;
+        padding: 12px 15px;
+        margin-top: 20px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* Remove default list style */
+    .user-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Each conversation entry */
+    .user-item {
+        padding: 12px 15px;
+        border-bottom: none; /* removes the line */
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+        .user-item:hover {
+            background-color: #f3f3f3;
+        }
+
+        /* Active conversation */
+        .user-item.active {
+            background-color: lightgray;
+        }
+
+            .user-item.active .name {
+                color: black;
+            }
+
+        /* Conversation title */
+        .user-item .name {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            display: block;
+        }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterCheckboxes = document.querySelectorAll('.filters input[type="checkbox"]');
+
+        const defaultFilters = {
+            "match": true,
+            "entrainement": true,
+            "reunion": true
+        };
+
+        const savedFilters = JSON.parse(localStorage.getItem('calendarFilters') || JSON.stringify(defaultFilters));
+
+        filterCheckboxes.forEach(checkbox => {
+            const filterType = checkbox.dataset.filter;
+            checkbox.checked = savedFilters[filterType] !== false;
+
+            checkbox.addEventListener('change', function() {
+                const currentFilters = JSON.parse(localStorage.getItem('calendarFilters') || JSON.stringify(defaultFilters));
+                currentFilters[filterType] = this.checked;
+                localStorage.setItem('calendarFilters', JSON.stringify(currentFilters));
+            });
+        });
+    });
+
+    // Établir une connexion
+    const connexion = new signalR.HubConnectionBuilder()
+        .withUrl("/chathub")
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    // Débuter une connexion
+    connexion.start();
+
+    // Ouvrir le modal
+    function openGroupCreation() {
+        document.getElementById("groupCreationModal").style.display = "flex";
+        loadAvailableUsers(); // Load users when opening
+    }
+
+    // Fermer le modal
+    function closeGroupCreation() {
+        document.getElementById("groupCreationModal").style.display = "none";
+    }
+
+    // Générer les utilisateurs
+    async function loadAvailableUsers() {
+        const container = document.getElementById("availableUsersList");
+        container.innerHTML = "Chargement des utilisateurs...";
+
+        const response = await fetch('/Home/GetAllowedUsers');
+        const users = await response.json();
+        console.log(users);
+        container.innerHTML = "";
+
+        if (!users || users.length === 0) {
+            container.innerHTML = "<p>Aucun utilisateur disponible</p>";
+            return;
+        }
+
+        users.forEach(u => {
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.id = `user_${u.customId}`;
+            checkbox.value = u.customId;
+
+            const label = document.createElement("label");
+            label.htmlFor = checkbox.id;
+            label.textContent = ` ${u.nom} ${u.prenom}`;
+
+            const div = document.createElement("div");
+            div.style.marginBottom = "5px";
+            div.appendChild(checkbox);
+            div.appendChild(label);
+
+            container.appendChild(div);
+        });
+    }
+
+        connexion.on("GroupCreated", function(conversationId, titre) {
+        const userList = document.querySelector(".conversation-list .user-list");
+        if (!userList) return;
+
+        const li = document.createElement("li");
+        li.classList.add("user-item");
+
+        const a = document.createElement("a");
+        a.href = `/Parent/Conversation/${conversationId}`;
+        a.classList.add("name");
+        a.textContent = `- ${titre}`;
+
+        li.appendChild(a);
+        userList.appendChild(li);
+
+        closeGroupCreation();
+    });
+
+    async function createGroup() {
+        const groupName = document.getElementById("newGroupName").value.trim();
+        if (!groupName) return alert("Veuillez entrer un nom pour le groupe");
+
+        const selectedUserIds = Array.from(document.querySelectorAll("#availableUsersList input:checked"))
+                                     .map(cb => parseInt(cb.value));
+
+        if (selectedUserIds.length === 0)
+            return alert("Veuillez sélectionner au moins un utilisateur");
+
+        try {
+            if (connexion.state !== signalR.HubConnectionState.Connected) {
+                await connexion.start();
+            }
+
+            const conversationId = await connexion.invoke("CreateGroup", groupName, selectedUserIds);
+
+            window.location.href = `/Parent/Conversation/${conversationId}`;
+
+        } catch (err) {
+            console.error(err);
+            alert("Erreur lors de la création du groupe.");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var accountDeletionScheduled = @Html.Raw(Json.Serialize(TempData["AccountDeletionScheduled"] ?? false));
+
+        if (accountDeletionScheduled) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Compte programmé pour suppression',
+                text: 'Votre compte sera supprimé dans 30 jours.',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+</script>
+</html>

@@ -1,0 +1,316 @@
+﻿@{
+    ViewData["Title"] = "Kaypic - Web3";
+}
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        margin: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background-color: #f7f9fc;
+        color: #333;
+    }
+
+    .top-banner {
+            background-color: #0d47ff;
+        color: white;
+        text-align: center;
+        padding: 1.5rem; 
+        font-weight: 700; 
+        font-size: 1.5rem;
+        letter-spacing: 1px;
+    }
+
+    header {
+        background-color: white;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    header a {
+        text-decoration: none;
+        font-weight: 600;
+                color: #0d47ff;
+    }
+
+    header a:hover {
+        text-decoration: underline;
+    }
+
+    section {
+        padding: 5rem 2rem;
+        text-align: center;
+    }
+
+    #home {
+        background: white;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        padding: 4rem 2rem;
+    }
+
+    #home .text {
+        flex: 1 1 400px;
+        max-width: 500px;
+        text-align: left;
+    }
+
+    #home .text h2 {
+        color: #0d47ff;
+        margin-bottom: 1rem;
+        font-weight: bold;
+    }
+
+    #home .text p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    #home img {
+        flex: 1 1 400px;
+        max-width: 450px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #advantages {
+        background: #e9f3ff;
+        padding: 5rem 2rem;
+    }
+
+    h1, h2 {
+        font-size: 18px;
+        color: #0d47ff;
+        font-weight: bold;
+    }
+
+    .adv-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .adv-box {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 2rem;
+        max-width: 220px;
+        transition: transform 0.2s;
+    }
+
+    .adv-box:hover {
+        transform: translateY(-5px);
+    }
+
+    /* Card grid section */
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        padding: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        text-align: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .card img {
+        max-height: 80px;
+        margin-bottom: 15px;
+        object-fit: contain;
+    }
+
+    .connect-form {
+        background: #f0f0f0;
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    footer {
+        text-align: center;
+        background-color: #f0f0f0;
+        color: #555;
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+</style>
+</head>
+<body>
+    @if (TempData["LogoutMessage"] != null)
+    {
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'Déconnexion réussie',
+                text: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["LogoutMessage"])),
+                timer: 3000,
+                showConfirmButton: false
+            });
+        </script>
+    }   
+
+    @if (TempData["AlertMessage"] != null)
+    {
+        <script>
+            Swal.fire({
+                icon: 'warning',
+                title: 'Connexion échouée',
+                text: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(@TempData["AlertMessage"])),
+                timer: 3000,
+                showConfirmButton: false
+            });
+        </script>
+    }
+
+    <section id="home">
+        <div class="text">
+            <h2>Découvrez Kaypic</h2>
+            <p>Une plateforme simple, conçue pour connecter les communautés et favoriser la collaboration. 
+                Explorez, connectez-vous et évoluez avec nous : votre espace de confiance pour les activités locales et les cercles d’amis.
+            </p>
+        </div>
+        <img src="https://images.unsplash.com/photo-1521790361543-f645cf042ec4?auto=format&fit=crop&w=800&q=80" alt="Kaypic illustration" />
+    </section>
+
+    <section id="advantages">
+        <h2>Pourquoi choisir Kaypic?</h2>
+        <div class="adv-container">
+            <div class="adv-box">
+                <h3>Communication en temps réel</h3>
+            </div>
+            <div class="adv-box">
+                <h3>Des événements partagés</h3>
+            </div>
+            <div class="adv-box">
+                <h3>Notifications personnalisées</h3>
+            </div>
+        </div>
+    </section>
+
+    <section id="equipes">
+        <h1>Découvrez les activités locales et les cercles de confiance près de chez vous</h1>
+        <div class="card-grid">
+            <div class="card">
+                <a href="https://circle.kaypic.com/ctkdib">
+                    <img style="height: 100px;" src="https://s3.amazonaws.com/sinfoca_cache/944/logo_944_01122022181740.jpeg" alt="Club taekwondo île bizard">
+                    <h3 class="has-text-weight-semibold has-text-dark">club taekwondo île bizard</h3>
+                </a>
+            </div>
+
+
+            <div class="card">
+                <a href="https://circle.kaypic.com/dr22">
+                    <img style="height: 100px;" src="https://s3.amazonaws.com/sinfoca_cache/937/logo_937_15052023042559.jpeg" alt="DR22 Sports">
+                    <h3 class="has-text-weight-semibold has-text-dark">dr22 sports</h3>
+                </a>
+            </div>
+
+
+            <div class="card">
+                <a href="https://circle.kaypic.com/ehs">
+                    <img style="height: 100px;" src="http://s3.amazonaws.com/sinfoca_cache/1020/logo_0_27062025115806.png" alt="Empowering her sports">
+                    <h3 class="has-text-weight-semibold has-text-dark">empowering her sports</h3>
+                </a>
+            </div>
+
+
+            <div class="card">
+                <a href="https://circle.kaypic.com/golfboss">
+                    <img style="height: 100px;" src="http://s3.amazonaws.com/sinfoca_cache/0/site--default-logo.png" alt="golfboss">
+                    <h3 class="has-text-weight-semibold has-text-dark">golfboss</h3>
+                </a>
+            </div>
+
+
+            <div class="card">
+                <a href="https://circle.kaypic.com/jedbasketball">
+                    <img style="height: 100px;" src="http://s3.amazonaws.com/sinfoca_cache/991/logo_991_12042025040418.png" alt="JED Basketball">
+                    <h3 class="has-text-weight-semibold has-text-dark">jed basketball</h3>
+                </a>
+            </div>
+
+
+            <div class="card">
+                <a href="https://circle.kaypic.com/saintlaurentspartans">
+                    <img style="height: 100px;" src="https://s3.amazonaws.com/sinfoca_cache/932/logo_932_30032022150448.jpeg" alt="Saint-Laurent Spartans">
+                    <h3 class="has-text-weight-semibold has-text-dark">saint-laurent spartans</h3>
+                </a>
+            </div>
+
+
+            <div class="card">
+                <a href="https://circle.kaypic.com/traininzen">
+                    <img style="height: 100px;" src="http://s3.amazonaws.com/sinfoca_cache/1010/logo_1010_06032025210458.png" alt="train.in.zen">
+                    <h3 class="has-text-weight-semibold has-text-dark">train.in.zen</h3>
+                </a>
+            </div>
+
+
+            <div class="card">
+                <a href="https://circle.kaypic.com/ghlmontreal">
+                    <img style="height: 100px;" src="https://s3.amazonaws.com/sinfoca_cache/4/logo_4_24022025171950.png" alt="GHL">
+                    <h3 class="has-text-weight-semibold has-text-dark">ghl</h3>
+                </a>
+            </div>
+
+
+            <div class="card">
+                <a href="https://circle.kaypic.com/slbasket">
+                    <img style="height: 100px;" src="https://s3.amazonaws.com/sinfoca_cache/202/logo_202_26082021163936.jpeg" alt="Basketball Saint-Laurent">
+                    <h3 class="has-text-weight-semibold has-text-dark">basketball saint-laurent</h3>
+                </a>
+            </div>
+
+
+            <div class="card">
+                <a href="https://circle.kaypic.com/sundayhockey">
+                    <img style="height: 100px;" src="https://s3.amazonaws.com/sinfoca_cache/352/logo_352_14092017201526.png" alt="Sunday Hockey">
+                    <h3 class="has-text-weight-semibold has-text-dark">sunday hockey</h3>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        &copy; 2025 - Kaypic / Leen, Mariyam, Émile -
+        <a asp-area="" asp-controller="Home" asp-action="Privacy"><b>Privacy</b></a>
+    </footer>
+</body>
+</html>
