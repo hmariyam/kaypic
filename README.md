@@ -7,7 +7,7 @@ Une platforme de communication inspirée de la plateforme existante https://circ
 - Émile Larochelle-Langevin
 
 ## Diagramme du BD
-![Diagramme](https://git.dti.crosemont.quebec/lal/kaypic_web3/-/raw/main/Fichiers/Diagramme.png?ref_type=heads)
+![Diagramme]([https://git.dti.crosemont.quebec/lal/kaypic_web3/-/raw/main/Fichiers/Diagramme.png?ref_type=heads](https://github.com/hmariyam/kaypic/blob/main/Fichiers/Diagramme.png?raw=true)
 
 ## Migrations
 L'application utilise Entity Framework Core pour gérer les migrations.
